@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Clone the private EGNooz repo as user egnooz over SSH, with no prompts.
-# Refuses HTTPS (that hangs with no TTY). Uses GIT_SSH_COMMAND -i so ssh
-# actually presents the deploy key (prefers ~/.ssh/egnooz_github, then deploykey1).
+# GitHub port 22 times out on krystalbbs.net, so SSH goes via ssh.github.com:443.
+# Refuses HTTPS. Prefers ~/.ssh/egnooz_github, then deploykey1.
 set -euo pipefail
 
 HOST_USER="egnooz"
@@ -9,6 +9,9 @@ DEST="${EGNOOZ_ROOT:-/home/${HOST_USER}/egnooz}"
 REPO_SSH="git@github.com:randers1999/EGNooz.git"
 SSH_DIR="${HOME}/.ssh"
 KNOWN="${SSH_DIR}/known_hosts"
+SSH_CONFIG="${SSH_DIR}/config"
+BEGIN_MARK="# BEGIN egnooz github ssh"
+END_MARK="# END egnooz github ssh"
 
 export GIT_TERMINAL_PROMPT=0
 export GIT_CONFIG_COUNT=1
@@ -67,26 +70,53 @@ chmod 600 "${KEY}"
 [[ -f "${KEY}.pub" ]] && chmod 644 "${KEY}.pub"
 
 echo "Using SSH key ${KEY}"
+echo "GitHub SSH via ssh.github.com port 443 (port 22 times out on this VPS)."
 
-# Seed GitHub's host key so ssh never asks "Are you sure you want to continue connecting?"
+# ~/.ssh/config so git@github.com uses 443 without a password prompt.
+touch "${SSH_CONFIG}"
+chmod 600 "${SSH_CONFIG}"
+if grep -q "^${BEGIN_MARK}$" "${SSH_CONFIG}"; then
+  awk -v b="${BEGIN_MARK}" -v e="${END_MARK}" '
+    $0==b {skip=1; next}
+    $0==e {skip=0; next}
+    !skip {print}
+  ' "${SSH_CONFIG}" > "${SSH_CONFIG}.tmp"
+  mv "${SSH_CONFIG}.tmp" "${SSH_CONFIG}"
+fi
+{
+  echo "${BEGIN_MARK}"
+  echo "Host github.com"
+  echo "  HostName ssh.github.com"
+  echo "  Port 443"
+  echo "  User git"
+  echo "  IdentityFile ${KEY}"
+  echo "  IdentitiesOnly yes"
+  echo "  BatchMode yes"
+  echo "  PreferredAuthentications publickey"
+  echo "${END_MARK}"
+} >> "${SSH_CONFIG}"
+chmod 600 "${SSH_CONFIG}"
+
+# Seed host key for [ssh.github.com]:443 — do not scan github.com:22 (it times out).
 touch "${KNOWN}"
 chmod 600 "${KNOWN}"
-ssh-keygen -R github.com -f "${KNOWN}" >/dev/null 2>&1 || true
-ssh-keyscan -t ed25519 github.com >> "${KNOWN}" 2>/dev/null
-if ! ssh-keygen -F github.com -f "${KNOWN}" >/dev/null 2>&1; then
-  echo "ssh-keyscan -t ed25519 github.com did not write a host key to ${KNOWN}." >&2
+ssh-keygen -R "[ssh.github.com]:443" -f "${KNOWN}" >/dev/null 2>&1 || true
+ssh-keygen -R ssh.github.com -f "${KNOWN}" >/dev/null 2>&1 || true
+ssh-keyscan -p 443 -t ed25519 ssh.github.com >> "${KNOWN}" 2>/dev/null
+if ! ssh-keygen -F "[ssh.github.com]:443" -f "${KNOWN}" >/dev/null 2>&1; then
+  echo "ssh-keyscan -p 443 ssh.github.com did not write a host key to ${KNOWN}." >&2
   exit 1
 fi
 
-# Force this key; never fall through to ssh-agent/password.
-export GIT_SSH_COMMAND="ssh -i \"${KEY}\" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes"
+# GIT_SSH_COMMAND still forces -i and 443 even if config is skipped.
+export GIT_SSH_COMMAND="ssh -i \"${KEY}\" -p 443 -o HostName=ssh.github.com -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes"
 
 set +e
-ssh_out="$(ssh -i "${KEY}" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -T git@github.com 2>&1)"
+ssh_out="$(ssh -i "${KEY}" -p 443 -o HostName=ssh.github.com -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -T git@github.com 2>&1)"
 set -e
 if ! grep -qi "successfully authenticated" <<<"${ssh_out}"; then
-  echo "GitHub SSH failed without asking for a password. ssh used -i ${KEY}." >&2
-  echo "Add the matching public key as a read-only deploy key, then retry." >&2
+  echo "GitHub SSH failed on ssh.github.com:443 without asking for a password." >&2
+  echo "ssh used -i ${KEY} -p 443. Add the matching public key as a read-only deploy key." >&2
   if [[ -f "${KEY}.pub" ]]; then
     echo "Public key:" >&2
     cat "${KEY}.pub" >&2
