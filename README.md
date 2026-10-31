@@ -62,51 +62,44 @@ sudo -iu egnooz
 
 ### Clone the private repo (read-only SSH deploy key)
 
-This repo is **private**. `git clone https://github.com/randers1999/EGNooz.git` will sit there asking for a username and password, and with no TTY it looks stalled. Do not use HTTPS on the VPS. Do not paste credentials into chat.
+This repo is **private**. HTTPS clone hangs with no TTY (credential prompt). ssh can also hang on a `github.com` host-key prompt, or ignore a key named `deploykey1` unless you pass `-i`. Do not use HTTPS. Do not paste credentials into chat.
 
-Recommended: a **read-only GitHub deploy key** for `randers1999/EGNooz` only, then clone over SSH. Empty passphrase so git never prompts.
+If you already generated `~/.ssh/deploykey1`, use that file. Empty passphrase so git never prompts.
 
-As `egnooz`:
+As `egnooz` — non-interactive, no password prompt:
 
 ```bash
 mkdir -p ~/.ssh
 chmod 700 ~/.ssh
-ssh-keygen -t ed25519 -f ~/.ssh/egnooz_github -N "" -C "egnooz@krystalbbs.net deploy (read-only)"
-chmod 600 ~/.ssh/egnooz_github
+# Skip ssh-keygen if deploykey1 already exists.
+# ssh-keygen -t ed25519 -f ~/.ssh/deploykey1 -N "" -C "egnooz@krystalbbs.net deploy (read-only)"
+chmod 600 ~/.ssh/deploykey1
 
-cat >> ~/.ssh/config <<'EOF'
-Host github.com
-  HostName github.com
-  User git
-  IdentityFile ~/.ssh/egnooz_github
-  IdentitiesOnly yes
-  BatchMode yes
-  PreferredAuthentications publickey
-EOF
-chmod 600 ~/.ssh/config
-
+# Stop ssh asking "are you sure you want to continue connecting?"
 ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
 
 echo "Add this public key as a read-only deploy key:"
 echo "GitHub → randers1999/EGNooz → Settings → Deploy keys → Add deploy key"
 echo "Title: krystalbbs.net egnooz. Leave write access off."
-cat ~/.ssh/egnooz_github.pub
+cat ~/.ssh/deploykey1.pub
 ```
 
 On your own computer (as GitHub user `randers1999`), add that **public** key as a deploy key. Do not enable write access. Do not copy the private key off the VPS.
 
-Then as `egnooz` (this will not ask for a password):
+Then as `egnooz` (refuses HTTPS; forces this key; no prompts):
 
 ```bash
-# If a hung HTTPS clone left a half-written directory:
-# rm -rf /home/egnooz/egnooz
+# If a hung clone left a half-written directory:
+# mv /home/egnooz/egnooz /home/egnooz/egnooz.stalled
 
-GIT_TERMINAL_PROMPT=0 git -c credential.helper= clone git@github.com:randers1999/EGNooz.git /home/egnooz/egnooz
+export GIT_TERMINAL_PROMPT=0
+export GIT_SSH_COMMAND="ssh -i ${HOME}/.ssh/deploykey1 -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes"
+git -c credential.helper= clone git@github.com:randers1999/EGNooz.git /home/egnooz/egnooz
 cd /home/egnooz/egnooz
 bash deploy/install.sh
 ```
 
-Later clones or a stuck HTTPS remote: `bash deploy/clone.sh` (same SSH key, still no prompt). To switch an existing checkout: `git remote set-url origin git@github.com:randers1999/EGNooz.git`.
+`deploy/clone.sh` does the same: prefers `~/.ssh/deploykey1`, runs `ssh-keyscan -t ed25519 github.com`, sets `GIT_SSH_COMMAND` with those `-o` flags, sets `GIT_TERMINAL_PROMPT=0`, and refuses HTTPS. Override the key path with `EGNOOZ_SSH_KEY=deploykey1` if needed.
 
 Edit `/home/egnooz/.config/egnooz/egnooz.env` (`chmod 600`):
 

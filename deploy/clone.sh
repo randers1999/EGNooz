@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
-# Clone or re-point the private EGNooz repo as user egnooz using a read-only
-# GitHub deploy key over SSH. Never uses HTTPS. Never prompts for a password.
+# Clone the private EGNooz repo as user egnooz over SSH, with no prompts.
+# Refuses HTTPS (that hangs with no TTY). Uses GIT_SSH_COMMAND -i so ssh
+# actually presents the deploy key (including a file named deploykey1).
 set -euo pipefail
 
 HOST_USER="egnooz"
 DEST="${EGNOOZ_ROOT:-/home/${HOST_USER}/egnooz}"
 REPO_SSH="git@github.com:randers1999/EGNooz.git"
-KEY="${HOME}/.ssh/egnooz_github"
+SSH_DIR="${HOME}/.ssh"
+KNOWN="${SSH_DIR}/known_hosts"
 
 export GIT_TERMINAL_PROMPT=0
 export GIT_CONFIG_COUNT=1
@@ -18,12 +20,35 @@ if [[ "$(id -un)" != "${HOST_USER}" ]]; then
   exit 1
 fi
 
-mkdir -p "${HOME}/.ssh"
-chmod 700 "${HOME}/.ssh"
+mkdir -p "${SSH_DIR}"
+chmod 700 "${SSH_DIR}"
 
-if [[ ! -f "${KEY}" ]]; then
+pick_key() {
+  local k name
+  if [[ -n "${EGNOOZ_SSH_KEY:-}" ]]; then
+    k="${EGNOOZ_SSH_KEY}"
+    [[ "${k}" == /* ]] || k="${SSH_DIR}/${k}"
+    if [[ -f "${k}" ]]; then
+      printf '%s\n' "${k}"
+      return 0
+    fi
+    echo "EGNOOZ_SSH_KEY is set but not a file: ${k}" >&2
+    exit 1
+  fi
+  for name in deploykey1 egnooz_github id_ed25519; do
+    if [[ -f "${SSH_DIR}/${name}" ]]; then
+      printf '%s\n' "${SSH_DIR}/${name}"
+      return 0
+    fi
+  done
+  return 1
+}
+
+if ! KEY="$(pick_key)"; then
+  KEY="${SSH_DIR}/deploykey1"
   ssh-keygen -t ed25519 -f "${KEY}" -N "" -C "egnooz@krystalbbs.net deploy (read-only)"
-  chmod 600 "${KEY}" "${KEY}.pub"
+  chmod 600 "${KEY}"
+  [[ -f "${KEY}.pub" ]] && chmod 644 "${KEY}.pub"
   echo "Created ${KEY} with an empty passphrase so git never asks."
   echo
   echo "Add the public key as a read-only deploy key in the GitHub website"
@@ -39,55 +64,54 @@ if [[ ! -f "${KEY}" ]]; then
 fi
 
 chmod 600 "${KEY}"
-chmod 644 "${KEY}.pub"
+[[ -f "${KEY}.pub" ]] && chmod 644 "${KEY}.pub"
 
-SSH_CONFIG="${HOME}/.ssh/config"
-if [[ ! -f "${SSH_CONFIG}" ]] || ! grep -q "IdentityFile ${KEY}" "${SSH_CONFIG}"; then
-  {
-    echo ""
-    echo "Host github.com"
-    echo "  HostName github.com"
-    echo "  User git"
-    echo "  IdentityFile ${KEY}"
-    echo "  IdentitiesOnly yes"
-    echo "  BatchMode yes"
-    echo "  PreferredAuthentications publickey"
-  } >> "${SSH_CONFIG}"
-  chmod 600 "${SSH_CONFIG}"
-fi
+echo "Using SSH key ${KEY}"
 
-KNOWN="${HOME}/.ssh/known_hosts"
+# Seed GitHub's host key so ssh never asks "Are you sure you want to continue connecting?"
 touch "${KNOWN}"
 chmod 600 "${KNOWN}"
+ssh-keygen -R github.com -f "${KNOWN}" >/dev/null 2>&1 || true
+ssh-keyscan -t ed25519 github.com >> "${KNOWN}" 2>/dev/null
 if ! ssh-keygen -F github.com -f "${KNOWN}" >/dev/null 2>&1; then
-  ssh-keyscan -t ed25519 github.com >> "${KNOWN}" 2>/dev/null
+  echo "ssh-keyscan -t ed25519 github.com did not write a host key to ${KNOWN}." >&2
+  exit 1
 fi
 
+# Force this key; never fall through to ssh-agent/password.
+export GIT_SSH_COMMAND="ssh -i \"${KEY}\" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes"
+
 set +e
-ssh_out="$(ssh -o BatchMode=yes -o PreferredAuthentications=publickey -o StrictHostKeyChecking=yes -T git@github.com 2>&1)"
+ssh_out="$(ssh -i "${KEY}" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes -T git@github.com 2>&1)"
 set -e
 if ! grep -qi "successfully authenticated" <<<"${ssh_out}"; then
-  echo "GitHub SSH failed without asking for a password. Add the public key as a" >&2
-  echo "read-only deploy key, then retry. Public key:" >&2
-  cat "${KEY}.pub" >&2
+  echo "GitHub SSH failed without asking for a password. ssh used -i ${KEY}." >&2
+  echo "Add the matching public key as a read-only deploy key, then retry." >&2
+  if [[ -f "${KEY}.pub" ]]; then
+    echo "Public key:" >&2
+    cat "${KEY}.pub" >&2
+  fi
   echo "${ssh_out}" >&2
   exit 2
 fi
 
 if [[ -d "${DEST}/.git" ]]; then
   origin="$(git -C "${DEST}" remote get-url origin 2>/dev/null || true)"
-  if [[ "${origin}" == https://* ]]; then
-    echo "origin is HTTPS, which hangs on this private repo with no TTY."
-    git -C "${DEST}" remote set-url origin "${REPO_SSH}"
-    echo "Switched origin to ${REPO_SSH}"
-  fi
+  case "${origin}" in
+    https://*|http://*)
+      echo "origin is HTTPS (${origin}). HTTPS is refused (hangs with no TTY)." >&2
+      echo "Rewriting origin to ${REPO_SSH} and continuing over SSH." >&2
+      git -C "${DEST}" remote set-url origin "${REPO_SSH}"
+      ;;
+  esac
   echo "Repo already at ${DEST}"
   git -C "${DEST}" remote -v
   exit 0
 fi
 
 if [[ -e "${DEST}" ]]; then
-  echo "${DEST} exists but is not a git checkout. Move it aside, then retry." >&2
+  echo "${DEST} exists but is not a git checkout (often a hung HTTPS clone)." >&2
+  echo "Move it aside, then retry:  mv ${DEST} ${DEST}.stalled" >&2
   exit 1
 fi
 
