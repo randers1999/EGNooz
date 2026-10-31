@@ -5,8 +5,8 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-WorkingDirectory=/home/krystalbbs/egnooz
-EnvironmentFile=/home/krystalbbs/.config/egnooz/egnooz.env
-Environment=EGNOOZ_ROOT=/home/krystalbbs/egnooz
-ExecStart=/home/krystalbbs/egnooz/.venv/bin/egnooz ingest
+WorkingDirectory=/home/egnooz/egnooz
+EnvironmentFile=/home/egnooz/.config/egnooz/egnooz.env
+Environment=EGNOOZ_ROOT=/home/egnooz/egnooz
+ExecStart=/home/egnooz/egnooz/.venv/bin/egnooz ingest
 Nice=10

@@ -5,12 +5,12 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-User=krystalbbs
-Group=krystalbbs
-WorkingDirectory=/home/krystalbbs/egnooz
-EnvironmentFile=/home/krystalbbs/.config/egnooz/egnooz.env
-Environment=EGNOOZ_ROOT=/home/krystalbbs/egnooz
-ExecStart=/home/krystalbbs/egnooz/.venv/bin/egnooz remind
+User=egnooz
+Group=egnooz
+WorkingDirectory=/home/egnooz/egnooz
+EnvironmentFile=/home/egnooz/.config/egnooz/egnooz.env
+Environment=EGNOOZ_ROOT=/home/egnooz/egnooz
+ExecStart=/home/egnooz/egnooz/.venv/bin/egnooz remind
 Nice=10
 NoNewPrivileges=true
 PrivateTmp=true

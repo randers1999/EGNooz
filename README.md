@@ -5,7 +5,7 @@ Daily East Gippsland news edition: outbound links with a preview card (title, so
 This repository is the ingest + review/publish prototype. The Android app comes later and will read `latest.json`. Do not treat ABC’s retired RSS feeds or Google News as inputs.
 
 - **VPS:** `krystalbbs.net`
-- **Deploy user:** `krystalbbs`
+- **App user:** `egnooz` (home `/home/egnooz`). Tom may log in as `tom` to create that user.
 - **Timezone:** `Australia/Melbourne`
 - **Public JSON (after Publish):** `https://krystalbbs.net/editions/latest.json`
 
@@ -29,7 +29,7 @@ Local sources default **on** in review. Mention-matches (Guardian Australia, and
 sources.yaml          # Tom-editable source list
 places.yaml           # East Gippsland + Sale + Maffra
 egnooz/               # Python package (ingest, reminder, review app)
-deploy/systemd/       # system units (User=krystalbbs)
+deploy/systemd/       # system units (User=egnooz)
 deploy/systemd-user/  # lingering user units (preferred)
 deploy/cron/          # crontab fallback
 deploy/nginx/         # reverse proxy example for krystalbbs.net
@@ -39,26 +39,35 @@ docs/edition-schema.md
 Data on the VPS (not in git):
 
 ```
-/home/krystalbbs/egnooz-data/drafts/YYYY-MM-DD.json
-/home/krystalbbs/egnooz-data/published/YYYY-MM-DD.json
-/home/krystalbbs/egnooz-data/published/latest.json
+/home/egnooz/egnooz-data/drafts/YYYY-MM-DD.json
+/home/egnooz/egnooz-data/published/YYYY-MM-DD.json
+/home/egnooz/egnooz-data/published/latest.json
 ```
 
-## Install on krystalbbs.net as `krystalbbs`
+## Install on krystalbbs.net as `egnooz`
 
 Do this on the VPS. Do not put secrets on the command line or in git.
 
+You can still log in as `tom` to create the dedicated app user, then run the app as `egnooz` (home `/home/egnooz`):
+
 ```bash
+# as tom, once
 sudo apt-get update
 sudo apt-get install -y python3 python3-venv python3-pip git
+sudo useradd --create-home --home-dir /home/egnooz --shell /bin/bash egnooz
+sudo loginctl enable-linger egnooz
+sudo -iu egnooz
+```
 
-git clone git@github.com:randers1999/EGNooz.git /home/krystalbbs/egnooz
-cd /home/krystalbbs/egnooz
+Then as `egnooz`:
 
+```bash
+git clone git@github.com:randers1999/EGNooz.git /home/egnooz/egnooz
+cd /home/egnooz/egnooz
 bash deploy/install.sh
 ```
 
-Edit `/home/krystalbbs/.config/egnooz/egnooz.env` (`chmod 600`):
+Edit `/home/egnooz/.config/egnooz/egnooz.env` (`chmod 600`):
 
 1. `SECRET_KEY` — `python3 -c "import secrets; print(secrets.token_urlsafe(48))"`
 2. `REVIEW_PASSWORD` — phone sign-in for the review page
@@ -70,10 +79,9 @@ Edit `/home/krystalbbs/.config/egnooz/egnooz.env` (`chmod 600`):
 
 If `krystalbbs.net` already serves another site, do not replace that vhost. Use a subdomain or a path, and change `REVIEW_BASE_URL` to match. Example nginx snippet: `deploy/nginx/krystalbbs.net.conf`.
 
-Enable the user services (lingering so timers fire after logout):
+Enable the user services (as `egnooz`; linger should already be on from the `tom` step):
 
 ```bash
-loginctl enable-linger krystalbbs
 systemctl --user daemon-reload
 systemctl --user enable --now egnooz-review.service
 systemctl --user enable --now egnooz-ingest.timer
@@ -81,7 +89,7 @@ systemctl --user enable --now egnooz-reminder.timer
 systemctl --user status egnooz-review.service
 ```
 
-Or install the copies in `deploy/systemd/` into `/etc/systemd/system/` (needs sudo once). They run as `User=krystalbbs`.
+Or install the copies in `deploy/systemd/` into `/etc/systemd/system/` (needs sudo once). They run as `User=egnooz`.
 
 Cron instead of timers:
 
@@ -94,8 +102,8 @@ You still need `egnooz serve` running (the review service) if you use cron for i
 Check:
 
 ```bash
-/home/krystalbbs/egnooz/.venv/bin/egnooz doctor
-/home/krystalbbs/egnooz/.venv/bin/egnooz ingest --no-email
+/home/egnooz/egnooz/.venv/bin/egnooz doctor
+/home/egnooz/egnooz/.venv/bin/egnooz ingest --no-email
 ```
 
 Open `https://krystalbbs.net/login`, review, Publish. Until you publish, `https://krystalbbs.net/editions/latest.json` is 404 (or still yesterday).

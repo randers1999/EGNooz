@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Run on krystalbbs.net as user krystalbbs. Does not SSH, does not print secrets.
+# Run on krystalbbs.net as user egnooz (home /home/egnooz).
+# Tom may log in as tom to create that user. This script does not SSH and does not print secrets.
 set -euo pipefail
 
-HOST_USER="krystalbbs"
+HOST_USER="egnooz"
 ROOT="${EGNOOZ_ROOT:-/home/${HOST_USER}/egnooz}"
 DATA="${EGNOOZ_DATA_DIR:-/home/${HOST_USER}/egnooz-data}"
 ENV_DIR="/home/${HOST_USER}/.config/egnooz"
@@ -39,11 +40,11 @@ fi
 
 cp "${ROOT}/deploy/systemd-user/"* "${UNIT_DIR}/"
 
-# System-level copies keep User=krystalbbs for /etc/systemd/system if you prefer root install.
+# System-level copies keep User=egnooz for /etc/systemd/system if you prefer a root install.
 echo
-echo "Next on krystalbbs.net:"
+echo "Next on krystalbbs.net (as user egnooz):"
 echo "  1. Edit ${ENV_FILE} (chmod 600). Generate SECRET_KEY; set REVIEW_PASSWORD and TOM_EMAIL."
-echo "  2. loginctl enable-linger ${HOST_USER}"
+echo "  2. If linger is not on yet, as tom: sudo loginctl enable-linger ${HOST_USER}"
 echo "  3. systemctl --user daemon-reload"
 echo "  4. systemctl --user enable --now egnooz-review.service egnooz-ingest.timer egnooz-reminder.timer"
 echo "  5. Point nginx on https://krystalbbs.net at 127.0.0.1:8080 (see deploy/nginx/krystalbbs.net.conf)"

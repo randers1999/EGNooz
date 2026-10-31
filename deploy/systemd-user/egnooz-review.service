@@ -5,10 +5,10 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=/home/krystalbbs/egnooz
-EnvironmentFile=/home/krystalbbs/.config/egnooz/egnooz.env
-Environment=EGNOOZ_ROOT=/home/krystalbbs/egnooz
-ExecStart=/home/krystalbbs/egnooz/.venv/bin/egnooz serve
+WorkingDirectory=/home/egnooz/egnooz
+EnvironmentFile=/home/egnooz/.config/egnooz/egnooz.env
+Environment=EGNOOZ_ROOT=/home/egnooz/egnooz
+ExecStart=/home/egnooz/egnooz/.venv/bin/egnooz serve
 Restart=on-failure
 RestartSec=5
 
