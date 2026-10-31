@@ -17,9 +17,9 @@ fi
 
 if [[ ! -f "${ROOT}/pyproject.toml" ]]; then
   echo "Clone the private repo with SSH first (HTTPS hangs with no TTY)." >&2
-  echo "As ${HOST_USER}, follow README (deploykey1 + ssh-keyscan + GIT_SSH_COMMAND)." >&2
+  echo "As ${HOST_USER}, follow README (egnooz_github + ssh-keyscan + GIT_SSH_COMMAND)." >&2
   echo "  export GIT_TERMINAL_PROMPT=0" >&2
-  echo "  export GIT_SSH_COMMAND=\"ssh -i \${HOME}/.ssh/deploykey1 -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes\"" >&2
+  echo "  export GIT_SSH_COMMAND=\"ssh -i \${HOME}/.ssh/egnooz_github -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes\"" >&2
   echo "  git -c credential.helper= clone git@github.com:randers1999/EGNooz.git ${ROOT}" >&2
   echo "Never HTTPS. After the tree exists: bash deploy/clone.sh" >&2
   exit 1

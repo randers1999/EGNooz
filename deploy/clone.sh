@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Clone the private EGNooz repo as user egnooz over SSH, with no prompts.
 # Refuses HTTPS (that hangs with no TTY). Uses GIT_SSH_COMMAND -i so ssh
-# actually presents the deploy key (including a file named deploykey1).
+# actually presents the deploy key (prefers ~/.ssh/egnooz_github, then deploykey1).
 set -euo pipefail
 
 HOST_USER="egnooz"
@@ -35,7 +35,7 @@ pick_key() {
     echo "EGNOOZ_SSH_KEY is set but not a file: ${k}" >&2
     exit 1
   fi
-  for name in deploykey1 egnooz_github id_ed25519; do
+  for name in egnooz_github deploykey1 id_ed25519; do
     if [[ -f "${SSH_DIR}/${name}" ]]; then
       printf '%s\n' "${SSH_DIR}/${name}"
       return 0
@@ -45,7 +45,7 @@ pick_key() {
 }
 
 if ! KEY="$(pick_key)"; then
-  KEY="${SSH_DIR}/deploykey1"
+  KEY="${SSH_DIR}/egnooz_github"
   ssh-keygen -t ed25519 -f "${KEY}" -N "" -C "egnooz@krystalbbs.net deploy (read-only)"
   chmod 600 "${KEY}"
   [[ -f "${KEY}.pub" ]] && chmod 644 "${KEY}.pub"
