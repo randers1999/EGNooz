@@ -31,6 +31,7 @@ places.yaml           # East Gippsland + Sale + Maffra
 egnooz/               # Python package (ingest, reminder, review app)
 deploy/systemd/       # system units (User=egnooz)
 deploy/systemd-user/  # lingering user units (preferred)
+deploy/clone.sh       # SSH deploy-key clone (no HTTPS, no password prompt)
 deploy/cron/          # crontab fallback
 deploy/nginx/         # reverse proxy example for krystalbbs.net
 docs/edition-schema.md
@@ -53,19 +54,59 @@ You can still log in as `tom` to create the dedicated app user, then run the app
 ```bash
 # as tom, once
 sudo apt-get update
-sudo apt-get install -y python3 python3-venv python3-pip git
+sudo apt-get install -y python3 python3-venv python3-pip git openssh-client
 sudo useradd --create-home --home-dir /home/egnooz --shell /bin/bash egnooz
 sudo loginctl enable-linger egnooz
 sudo -iu egnooz
 ```
 
-Then as `egnooz`:
+### Clone the private repo (read-only SSH deploy key)
+
+This repo is **private**. `git clone https://github.com/randers1999/EGNooz.git` will sit there asking for a username and password, and with no TTY it looks stalled. Do not use HTTPS on the VPS. Do not paste credentials into chat.
+
+Recommended: a **read-only GitHub deploy key** for `randers1999/EGNooz` only, then clone over SSH. Empty passphrase so git never prompts.
+
+As `egnooz`:
 
 ```bash
-git clone git@github.com:randers1999/EGNooz.git /home/egnooz/egnooz
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+ssh-keygen -t ed25519 -f ~/.ssh/egnooz_github -N "" -C "egnooz@krystalbbs.net deploy (read-only)"
+chmod 600 ~/.ssh/egnooz_github
+
+cat >> ~/.ssh/config <<'EOF'
+Host github.com
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/egnooz_github
+  IdentitiesOnly yes
+  BatchMode yes
+  PreferredAuthentications publickey
+EOF
+chmod 600 ~/.ssh/config
+
+ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
+
+echo "Add this public key as a read-only deploy key:"
+echo "GitHub → randers1999/EGNooz → Settings → Deploy keys → Add deploy key"
+echo "Title: krystalbbs.net egnooz. Leave write access off."
+cat ~/.ssh/egnooz_github.pub
+```
+
+On your own computer (as GitHub user `randers1999`), add that **public** key as a deploy key. Do not enable write access. Do not copy the private key off the VPS.
+
+Then as `egnooz` (this will not ask for a password):
+
+```bash
+# If a hung HTTPS clone left a half-written directory:
+# rm -rf /home/egnooz/egnooz
+
+GIT_TERMINAL_PROMPT=0 git -c credential.helper= clone git@github.com:randers1999/EGNooz.git /home/egnooz/egnooz
 cd /home/egnooz/egnooz
 bash deploy/install.sh
 ```
+
+Later clones or a stuck HTTPS remote: `bash deploy/clone.sh` (same SSH key, still no prompt). To switch an existing checkout: `git remote set-url origin git@github.com:randers1999/EGNooz.git`.
 
 Edit `/home/egnooz/.config/egnooz/egnooz.env` (`chmod 600`):
 

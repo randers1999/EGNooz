@@ -16,8 +16,22 @@ if [[ "$(id -un)" != "${HOST_USER}" ]]; then
 fi
 
 if [[ ! -f "${ROOT}/pyproject.toml" ]]; then
-  echo "Clone the repo to ${ROOT} first." >&2
+  echo "Clone the private repo with SSH first (HTTPS hangs with no TTY)." >&2
+  echo "As ${HOST_USER}, follow README: Clone the private repo (read-only SSH deploy key)." >&2
+  echo "  GIT_TERMINAL_PROMPT=0 git -c credential.helper= clone git@github.com:randers1999/EGNooz.git ${ROOT}" >&2
+  echo "Never a password prompt. After the tree exists: bash deploy/clone.sh" >&2
   exit 1
+fi
+
+if [[ -d "${ROOT}/.git" ]]; then
+  origin="$(git -C "${ROOT}" remote get-url origin 2>/dev/null || true)"
+  if [[ "${origin}" == https://* ]]; then
+    echo "origin is HTTPS (${origin}). That hangs on this private repo with no TTY." >&2
+    echo "Switch to SSH, then retry:" >&2
+    echo "  git -C ${ROOT} remote set-url origin git@github.com:randers1999/EGNooz.git" >&2
+    echo "Or run: bash ${ROOT}/deploy/clone.sh" >&2
+    exit 1
+  fi
 fi
 
 mkdir -p "${DATA}/drafts" "${DATA}/published" "${DATA}/state" "${ENV_DIR}" "${UNIT_DIR}"
