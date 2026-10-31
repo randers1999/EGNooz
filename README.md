@@ -99,14 +99,17 @@ Then as `egnooz` (SSH over 443; refuses HTTPS; no prompts):
 
 ```bash
 # If a hung clone left a half-written directory:
-# mv /home/egnooz/egnooz /home/egnooz/egnooz.stalled
+# mv /home/egnooz/EGNooz /home/egnooz/EGNooz.stalled
 
 export GIT_TERMINAL_PROMPT=0
 export GIT_SSH_COMMAND="ssh -i ${HOME}/.ssh/egnooz_github -p 443 -o HostName=ssh.github.com -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes"
-git -c credential.helper= clone git@github.com:randers1999/EGNooz.git /home/egnooz/egnooz
-cd /home/egnooz/egnooz
+# GitHub's default directory is EGNooz. That is the checkout — do not clone again into ~/egnooz.
+git -c credential.helper= clone git@github.com:randers1999/EGNooz.git
+cd ~/EGNooz
 bash deploy/install.sh
 ```
+
+If the tree is already at `/home/egnooz/EGNooz` (or you are standing in this repo), run `bash deploy/install.sh` from there. It treats that checkout as success and does **not** require a second clone to `/home/egnooz/egnooz`. `deploy/clone.sh` does the same.
 
 `deploy/clone.sh` writes that `Host github.com` block, runs `ssh-keyscan -p 443 ssh.github.com`, sets the same `GIT_SSH_COMMAND`, prefers `~/.ssh/egnooz_github`, and refuses HTTPS.
 
@@ -137,7 +140,8 @@ Or install the copies in `deploy/systemd/` into `/etc/systemd/system/` (needs su
 Cron instead of timers:
 
 ```bash
-crontab deploy/cron/egnooz.crontab
+# install.sh writes a copy with the checkout path filled in:
+crontab ~/.config/egnooz/egnooz.crontab
 ```
 
 You still need `egnooz serve` running (the review service) if you use cron for ingest/remind only.
@@ -145,8 +149,9 @@ You still need `egnooz serve` running (the review service) if you use cron for i
 Check:
 
 ```bash
-/home/egnooz/egnooz/.venv/bin/egnooz doctor
-/home/egnooz/egnooz/.venv/bin/egnooz ingest --no-email
+# From the checkout (often /home/egnooz/EGNooz; /home/egnooz/egnooz is also fine):
+.venv/bin/egnooz doctor
+.venv/bin/egnooz ingest --no-email
 ```
 
 Open `https://krystalbbs.net/login`, review, Publish. Until you publish, `https://krystalbbs.net/editions/latest.json` is 404 (or still yesterday).

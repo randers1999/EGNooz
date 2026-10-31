@@ -5,7 +5,8 @@
 set -euo pipefail
 
 HOST_USER="egnooz"
-DEST="${EGNOOZ_ROOT:-/home/${HOST_USER}/egnooz}"
+# GitHub's default clone name is EGNooz. Lowercase egnooz is also fine.
+DEST="${EGNOOZ_ROOT:-/home/${HOST_USER}/EGNooz}"
 REPO_SSH="git@github.com:randers1999/EGNooz.git"
 SSH_DIR="${HOME}/.ssh"
 KNOWN="${SSH_DIR}/known_hosts"
@@ -125,17 +126,30 @@ if ! grep -qi "successfully authenticated" <<<"${ssh_out}"; then
   exit 2
 fi
 
-if [[ -d "${DEST}/.git" ]]; then
-  origin="$(git -C "${DEST}" remote get-url origin 2>/dev/null || true)"
+is_egnooz_tree() {
+  local d="${1:-}"
+  [[ -n "${d}" && -d "${d}" && -d "${d}/.git" && -f "${d}/pyproject.toml" && -d "${d}/egnooz" ]]
+}
+
+existing=""
+for candidate in "${DEST}" "${PWD}" "/home/${HOST_USER}/EGNooz" "/home/${HOST_USER}/egnooz"; do
+  if is_egnooz_tree "${candidate}"; then
+    existing="$(cd "${candidate}" && pwd)"
+    break
+  fi
+done
+
+if [[ -n "${existing}" ]]; then
+  origin="$(git -C "${existing}" remote get-url origin 2>/dev/null || true)"
   case "${origin}" in
     https://*|http://*)
       echo "origin is HTTPS (${origin}). HTTPS is refused (hangs with no TTY)." >&2
       echo "Rewriting origin to ${REPO_SSH} and continuing over SSH." >&2
-      git -C "${DEST}" remote set-url origin "${REPO_SSH}"
+      git -C "${existing}" remote set-url origin "${REPO_SSH}"
       ;;
   esac
-  echo "Repo already at ${DEST}"
-  git -C "${DEST}" remote -v
+  echo "Repo already at ${existing} (no second clone)."
+  git -C "${existing}" remote -v
   exit 0
 fi
 
