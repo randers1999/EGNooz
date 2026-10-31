@@ -1,0 +1,10 @@
+[Unit]
+Description=Email Tom at 10:00am Melbourne if EGNooz is still unpublished
+
+[Timer]
+OnCalendar=Australia/Melbourne *-*-* 10:00:00
+Persistent=true
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

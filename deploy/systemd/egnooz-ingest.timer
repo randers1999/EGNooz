@@ -1,0 +1,10 @@
+[Unit]
+Description=Run EGNooz ingest at 5:00am Australia/Melbourne
+
+[Timer]
+OnCalendar=Australia/Melbourne *-*-* 05:00:00
+Persistent=true
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

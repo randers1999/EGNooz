@@ -1,0 +1,11 @@
+# Install with: .venv/bin/pip install -r requirements.txt
+# Pin the prototype set so the VPS and tests match.
+
+feedparser==6.0.11
+PyYAML==6.0.3
+flask==3.0.3
+httpx==0.27.2
+python-dateutil==2.9.0.post0
+python-dotenv==1.0.1
+waitress==3.0.2
+pytest==8.3.4

@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}Review {{ day|longdate }} — EGNooz{% endblock %}
+{% block body %}
+<header class="top">
+  <div>
+    <p class="kicker">Private review</p>
+    <h1>EGNooz</h1>
+    <p class="sub">{{ day|longdate }} · Australia/Melbourne</p>
+  </div>
+  <form method="post" action="{{ url_for('logout') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn ghost">Sign out</button>
+  </form>
+</header>
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    {% for message in messages %}
+      <p class="banner" role="status">{{ message }}</p>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+{% if published %}
+  <p class="banner banner-ok">Today is already published. You can still edit the draft and Publish again to replace it.</p>
+{% else %}
+  <p class="banner">Hold: this draft is not public. Yesterday’s <code>latest.json</code> stays up until you publish today.</p>
+{% endif %}
+
+{% if not draft %}
+  <section class="card">
+    <h2>No draft for today</h2>
+    <p>The 5:00 am job on krystalbbs.net has not written a draft yet, or it failed.</p>
+    <form method="post" action="{{ url_for('ingest_now') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn primary">Run ingest now</button>
+    </form>
+  </section>
+{% else %}
+
+<section class="warnings" aria-label="VicEmergency warnings">
+  <h2>Warnings</h2>
+  {% set w = draft.warnings %}
+  {% if w.districtFireDanger %}
+    <p class="fdr">East Gippsland fire danger: <strong>{{ w.districtFireDanger }}</strong>
+      {% if w.districtTotalFireBan %} · Total fire ban: {{ w.districtTotalFireBan }}{% endif %}
+    </p>
+  {% endif %}
+  {% if w['items'] %}
+    <ul class="warn-list">
+      {% for item in w['items'] %}
+        <li>
+          <a href="{{ item.url }}" rel="noopener noreferrer">{{ item.title }}</a>
+          <p class="meta">{{ item.location }}{% if item.category %} · {{ item.category }}{% endif %}{% if item.status %} · {{ item.status }}{% endif %}</p>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No in-scope VicEmergency incidents or warnings right now.</p>
+  {% endif %}
+  <p class="disclaimer">{{ w.disclaimer }}</p>
+  <p class="fineprint">{{ w.attribution }}
+    <a href="{{ w.attributionUrl }}">{{ w.license }}</a>
+    {% if w.feedLastUpdated %} · Feed last updated {{ w.feedLastUpdated|itemtime }}{% endif %}
+  </p>
+</section>
+
+<form id="review-form" method="post" action="{{ url_for('publish') }}" class="review-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <section class="card">
+    <label for="editor_note">Editor note <span class="optional">(optional, {{ editor_note_max }} characters)</span></label>
+    <textarea id="editor_note" name="editor_note" maxlength="{{ editor_note_max }}" rows="2" placeholder="Quiet news day; council meeting tonight.">{{ draft.editor_note }}</textarea>
+  </section>
+
+  {% macro item_card(item, default_hint) %}
+    <li class="item {% if not item.included %}item-off{% endif %}">
+      <label class="tick">
+        <input type="checkbox" name="included" value="{{ item.id }}" {% if item.included %}checked{% endif %}>
+        <span class="box" aria-hidden="true"></span>
+        <span class="item-body">
+          <a class="item-title" href="{{ item.url }}" rel="noopener noreferrer" target="_blank">{{ item.title }}</a>
+          <p class="meta">{{ item.source_name }} · {{ item.published_at|itemtime }} · {{ default_hint }}</p>
+          {% if item.snippet %}<p class="snippet">{{ item.snippet }}</p>{% endif %}
+          {% if item.matched_places %}<p class="places">{{ item.matched_places|join(', ') }}</p>{% endif %}
+        </span>
+      </label>
+    </li>
+  {% endmacro %}
+
+  {% if manual_items %}
+  <section class="card">
+    <h2>Added by you</h2>
+    <p class="hint">These stay on unless you uncheck them.</p>
+    <ul class="items">
+      {% for item in manual_items %}
+        {{ item_card(item, 'manual add') }}
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  <section class="card">
+    <h2>Local sources</h2>
+    <p class="hint">Default on. Uncheck anything that is not East Gippsland news, or a duplicate.</p>
+    {% if local_items %}
+    <ul class="items">
+      {% for item in local_items %}
+        {{ item_card(item, 'local source') }}
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p>No local-source items in this draft. Thin days are expected, especially away from Wednesday papers.</p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h2>Mentions East Gippsland</h2>
+    <p class="hint">Default off. Tick a story only if it really is about this area — “Gippsland” often means Morwell.</p>
+    {% if mention_items %}
+    <ul class="items">
+      {% for item in mention_items %}
+        {{ item_card(item, 'mention — default off') }}
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p>No mention-matches today.</p>
+    {% endif %}
+  </section>
+
+  {% if draft.ingest_log %}
+  <details class="card log">
+    <summary>Ingest log</summary>
+    <ul>
+      {% for entry in draft.ingest_log %}
+        <li><strong>{{ entry.source_id }}</strong> — {{ entry.status }}{% if entry.item_count %} · {{ entry.item_count }} items{% endif %}{% if entry.error %} · {{ entry.error }}{% endif %}{% if entry.detail %} · {{ entry.detail }}{% endif %}</li>
+      {% endfor %}
+    </ul>
+  </details>
+  {% endif %}
+
+  <div class="sticky">
+    <button type="submit" formaction="{{ url_for('save') }}" class="btn ghost" id="save-btn">Save draft</button>
+    <button type="submit" class="btn primary" id="publish-btn"
+      data-count="{{ draft.counts().included }}">Publish {{ draft.counts().included }} items</button>
+  </div>
+</form>
+
+<section class="card">
+  <h2>Add a URL</h2>
+  <p class="hint">ABC Gippsland, council, water, or anything you spotted that the feeds missed. Title is fetched from the page if you leave it blank — still only a link, never the article body.</p>
+  <form method="post" action="{{ url_for('add_url') }}" class="stack">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="url">URL</label>
+    <input id="url" name="url" type="url" inputmode="url" placeholder="https://www.abc.net.au/news/..." required>
+    <label for="title">Title <span class="optional">(optional)</span></label>
+    <input id="title" name="title" type="text" maxlength="180">
+    <label for="source_id">Source</label>
+    <select id="source_id" name="source_id">
+      <option value="manual">Other / added by Tom</option>
+      {% for source in source_choices %}
+        <option value="{{ source.id }}" {% if source.id == 'abc-gippsland' %}selected{% endif %}>{{ source.name }}</option>
+      {% endfor %}
+    </select>
+    <label for="source_name">Source label <span class="optional">(optional override)</span></label>
+    <input id="source_name" name="source_name" type="text" maxlength="80" placeholder="ABC Gippsland">
+    <button type="submit" class="btn">Add to draft</button>
+  </form>
+</section>
+
+<section class="card row-actions">
+  <form method="post" action="{{ url_for('ingest_now') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn ghost">Run ingest again</button>
+  </form>
+  <p class="fineprint">Review is this page (<code>/</code>). Public JSON after publish: <a href="{{ url_for('latest_json') }}">/editions/latest.json</a>. Generated {{ draft.generated_at|itemtime }}.</p>
+</section>
+{% endif %}
+
+<script src="{{ url_for('static', filename='review.js') }}"></script>
+{% endblock %}

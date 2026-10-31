@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<body style="font-family: Georgia, serif; background:#f6f1e8; color:#14232e; padding:24px;">
+  <p style="letter-spacing:0.12em; text-transform:uppercase; font-size:12px;">EGNooz</p>
+  <h1 style="font-size:28px;">{{ date_label }}</h1>
+  {% if edition.editor_note %}<p style="font-size:18px;">{{ edition.editor_note }}</p>{% endif %}
+
+  {% if edition.warnings and edition.warnings['items'] %}
+  <h2>Warnings</h2>
+  <ul>
+    {% for item in edition.warnings['items'] %}
+      <li><a href="{{ item.url }}">{{ item.title }}</a> — {{ item.location }}</li>
+    {% endfor %}
+  </ul>
+  <p style="font-size:13px;">{{ edition.warnings.disclaimer }}<br>
+     {{ edition.warnings.attribution }}
+     (<a href="{{ edition.warnings.attributionUrl }}">{{ edition.warnings.license }}</a>)</p>
+  {% endif %}
+
+  <h2>Today’s links</h2>
+  {% for item in items %}
+    <p>
+      <a href="{{ item.url }}" style="color:#14232e; font-size:18px;">{{ item.title }}</a><br>
+      <span style="font-size:13px; color:#4d5c58;">{{ item.source_name }} · {{ item.published_at|itemtime }}</span><br>
+      {% if item.snippet %}<span>{{ item.snippet }}</span>{% endif %}
+    </p>
+  {% else %}
+    <p>A thin day — no headlines in this edition.</p>
+  {% endfor %}
+
+  <p style="font-size:13px;">No ads. Each headline opens the publisher’s page.
+     JSON: <a href="{{ latest_url }}">latest.json</a>
+     · Web: <a href="{{ public_url }}">today’s edition</a></p>
+  <p style="font-size:12px; color:#4d5c58;">Prototype list: this email is for Tom (and any testers he added). Double opt-in and unsubscribe will ship before a public list.</p>
+</body>
+</html>

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{% if edition %}EGNooz — {{ edition.edition_date|longdate }}{% else %}EGNooz — not published yet{% endif %}{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='public.css') }}">
+{% endblock %}
+{% block body_class %}public-page{% endblock %}
+{% block body %}
+<main class="shell">
+  <p class="kicker">East Gippsland daily edition</p>
+  <h1>EGNooz</h1>
+  {% if not edition %}
+    <p class="lede">No edition has been published yet. Yesterday’s file stays until Tom publishes today’s.</p>
+  {% else %}
+    <p class="sub">{{ edition.edition_date|longdate }}</p>
+    {% if edition.editor_note %}<p class="lede">{{ edition.editor_note }}</p>{% endif %}
+
+    {% set w = edition.warnings %}
+    {% if w and w['items'] %}
+    <section class="warnings">
+      <h2>Warnings</h2>
+      <ul class="warn-list">
+        {% for item in w['items'] %}
+          <li>
+            <a href="{{ item.url }}" rel="noopener noreferrer">{{ item.title }}</a>
+            <p class="meta">{{ item.location }}{% if item.status %} · {{ item.status }}{% endif %}</p>
+          </li>
+        {% endfor %}
+      </ul>
+      <p class="disclaimer">{{ w.disclaimer }}</p>
+      <p class="fineprint">{{ w.attribution }} <a href="{{ w.attributionUrl }}">{{ w.license }}</a></p>
+    </section>
+    {% endif %}
+
+    <ul class="items public-items">
+      {% for item in edition.included_items() %}
+        <li class="item">
+          <a class="item-title" href="{{ item.url }}" rel="noopener noreferrer">{{ item.title }}</a>
+          <p class="meta">{{ item.source_name }} · {{ item.published_at|itemtime }}</p>
+          {% if item.snippet %}<p class="snippet">{{ item.snippet }}</p>{% endif %}
+        </li>
+      {% else %}
+        <li><p>A thin day — no headlines in this edition.</p></li>
+      {% endfor %}
+    </ul>
+    <p class="fineprint">No ads. Each headline opens the publisher’s own page. Machine-readable copy: <a href="{{ url_for('latest_json') }}">latest.json</a></p>
+  {% endif %}
+</main>
+{% endblock %}

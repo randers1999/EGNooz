@@ -1,0 +1,20 @@
+[Unit]
+Description=EGNooz review and publish app (krystalbbs.net)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=krystalbbs
+Group=krystalbbs
+WorkingDirectory=/home/krystalbbs/egnooz
+EnvironmentFile=/home/krystalbbs/.config/egnooz/egnooz.env
+Environment=EGNOOZ_ROOT=/home/krystalbbs/egnooz
+ExecStart=/home/krystalbbs/egnooz/.venv/bin/egnooz serve
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

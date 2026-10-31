@@ -1,0 +1,11 @@
+.public-page .public-items {
+  list-style: none;
+  padding: 0;
+}
+.public-page .public-items .item {
+  background: #fffdf8;
+  border: 1px solid #d9d0c2;
+  border-radius: 14px;
+  padding: 1rem;
+  margin: 0.8rem 0;
+}

@@ -1,0 +1,154 @@
+:root {
+  --ink: #14232e;
+  --muted: #4d5c58;
+  --paper: #f4efe4;
+  --card: #fffdf8;
+  --teal: #1f5c57;
+  --teal-dark: #143c39;
+  --warn: #8b2e1a;
+  --line: #d9d0c2;
+  --ok: #215c38;
+  --shadow: 0 10px 30px rgba(20, 35, 46, 0.08);
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  line-height: 1.45;
+}
+body { min-height: 100vh; padding-bottom: 7rem; }
+.login-page, .public-page { padding-bottom: 2rem; }
+
+a { color: var(--teal-dark); }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9em; }
+
+.top, .shell, .card, .warnings, .banner, .sticky {
+  width: min(42rem, calc(100% - 1.5rem));
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem 0 0.5rem;
+}
+h1 { font-size: 2rem; margin: 0.1rem 0; letter-spacing: -0.03em; }
+h2 { font-size: 1.15rem; margin: 0 0 0.4rem; }
+.kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.72rem;
+  color: var(--teal);
+  margin: 0;
+  font-family: system-ui, sans-serif;
+}
+.sub, .meta, .hint, .fineprint, .optional, .places { color: var(--muted); }
+.sub { margin: 0; }
+.lede { font-size: 1.15rem; }
+.hint, .fineprint, .disclaimer { font-size: 0.92rem; }
+
+.banner {
+  background: #efe4cf;
+  border-left: 4px solid var(--teal);
+  padding: 0.75rem 1rem;
+  margin: 0.75rem auto;
+}
+.banner-ok { border-color: var(--ok); background: #e4efe6; }
+.banner-warn { border-color: var(--warn); background: #f6e4dc; }
+
+.card, .warnings {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 1rem 1rem 1.1rem;
+  margin: 0.9rem auto;
+  box-shadow: var(--shadow);
+}
+
+.warnings { border-color: #e3c3b7; }
+.disclaimer { color: var(--warn); }
+.warn-list, .items { list-style: none; padding: 0; margin: 0; }
+.warn-list li, .item { padding: 0.7rem 0; border-top: 1px solid var(--line); }
+.warn-list li:first-child, .item:first-child { border-top: 0; }
+
+.tick {
+  display: grid;
+  grid-template-columns: 1.8rem 1fr;
+  gap: 0.7rem;
+  align-items: flex-start;
+}
+.tick input { position: absolute; opacity: 0; pointer-events: none; }
+.box {
+  width: 1.7rem;
+  height: 1.7rem;
+  border: 2px solid var(--teal);
+  border-radius: 6px;
+  display: block;
+  background: #fff;
+  margin-top: 0.15rem;
+}
+.tick input:checked + .box {
+  background: var(--teal);
+  box-shadow: inset 0 0 0 3px #fff;
+}
+.item-off { opacity: 0.55; }
+.item-title {
+  font-size: 1.12rem;
+  font-weight: 650;
+  text-decoration: none;
+  color: var(--ink);
+  display: inline-block;
+}
+.item-title:hover { text-decoration: underline; }
+.snippet { margin: 0.25rem 0 0; }
+.places { margin: 0.2rem 0 0; font-size: 0.82rem; }
+
+label { display: block; font-family: system-ui, sans-serif; font-size: 0.92rem; margin-bottom: 0.3rem; }
+input[type="text"], input[type="url"], input[type="password"], textarea, select {
+  width: 100%;
+  font: inherit;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  margin-bottom: 0.8rem;
+}
+textarea { resize: vertical; }
+
+.stack { display: block; }
+.btn {
+  font-family: system-ui, sans-serif;
+  font-size: 1rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.8rem 1.15rem;
+  background: #e7eee8;
+  color: var(--ink);
+  min-height: 2.8rem;
+}
+.btn.primary { background: var(--teal); color: #fff; font-weight: 650; }
+.btn.ghost { background: transparent; border: 1px solid var(--line); }
+.sticky {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.75rem 0 1rem;
+  background: linear-gradient(to top, var(--paper) 70%, transparent);
+}
+.sticky .btn { flex: 1; }
+.login-shell { padding: 3rem 0; }
+.row-actions { display: block; }
+.log ul { padding-left: 1.1rem; }
+.log li { margin: 0.3rem 0; font-size: 0.9rem; }
+
+@media (max-width: 520px) {
+  h1 { font-size: 1.7rem; }
+  .sticky { width: 100%; padding: 0.75rem 0.75rem 1.1rem; }
+}
