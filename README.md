@@ -5,7 +5,7 @@ Daily East Gippsland news edition: outbound links with a preview card (title, so
 This repository is the ingest + review/publish prototype. The Android app comes later and will read `latest.json`. Do not treat ABC’s retired RSS feeds or Google News as inputs.
 
 - **VPS:** `krystalbbs.net` (apex already serves another site — leave that vhost alone)
-- **App host:** `egnooz.krystalbbs.net` (subdomain on the same box; rename in nginx + `REVIEW_BASE_URL`)
+- **App host:** `egnooz.krystalbbs.net` (subdomain on the same box; Caddy reverse_proxy; rename in the Caddy snippet + `REVIEW_BASE_URL`)
 - **App user:** `egnooz` (home `/home/egnooz`). Tom may log in as `tom` to create that user.
 - **Timezone:** `Australia/Melbourne`
 - **Public JSON (after Publish):** `https://egnooz.krystalbbs.net/editions/latest.json`
@@ -34,7 +34,8 @@ deploy/systemd/       # system units (User=egnooz)
 deploy/systemd-user/  # lingering user units (preferred)
 deploy/clone.sh       # SSH deploy-key clone (no HTTPS, no password prompt)
 deploy/cron/          # crontab fallback
-deploy/nginx/         # subdomain vhost (egnooz.krystalbbs.net); do not replace the apex site
+deploy/caddy/         # extra Caddy site (egnooz.krystalbbs.net → 127.0.0.1:8080)
+deploy/nginx/         # optional nginx example only — this VPS uses Caddy, not nginx
 docs/edition-schema.md
 ```
 
@@ -120,17 +121,19 @@ Edit `/home/egnooz/.config/egnooz/egnooz.env` (`chmod 600`):
 2. `REVIEW_PASSWORD` — phone sign-in for the review page
 3. `TOM_EMAIL` — draft-ready, 10:00 am reminder, and the prototype edition email
 4. `RESEND_API_KEY` and `RESEND_FROM` — leave empty to run without mail
-5. `REVIEW_BASE_URL=https://egnooz.krystalbbs.net` (must match the nginx `server_name` if you rename the subdomain)
-6. `SESSION_COOKIE_SECURE=true` once certbot is serving HTTPS
-7. `EGNOOZ_BIND=127.0.0.1` and `EGNOOZ_PORT=8080` (nginx talks to localhost)
+5. `REVIEW_BASE_URL=https://egnooz.krystalbbs.net` (must match the Caddy site name if you rename the subdomain)
+6. `SESSION_COOKIE_SECURE=true` once Caddy is serving HTTPS on the subdomain
+7. `EGNOOZ_BIND=127.0.0.1` and `EGNOOZ_PORT=8080` (`egnooz-review.service`; Caddy proxies to it)
 
 `deploy/install.sh` **never overwrites** `~/.config/egnooz/egnooz.env` (creates it from `.env.example` only if missing). It prints a warning if the clone has a repo-root `.env` and will not touch that file either.
 
 `deploy/install.sh` **always overwrites** `~/.config/systemd/user/*.service` and `*.timer` from `deploy/systemd-user/` (git pull alone does not). After every pull, run `bash deploy/install.sh` as `egnooz`.
 
-### Subdomain nginx (do not replace krystalbbs.net)
+### Subdomain Caddy (do not replace krystalbbs.net)
 
-The apex `krystalbbs.net` vhost stays. EGNooz is an extra site on the same box.
+This VPS already runs **Caddy** on :80 and :443 (not nginx; there is no `/etc/nginx/sites-available`). The review app stays on `127.0.0.1:8080` via systemd user `egnooz-review.service`. Caddy only reverse-proxies the extra hostname and obtains the cert.
+
+The apex `krystalbbs.net` site block stays as it is. EGNooz is a **second** site in the same Caddy process.
 
 **DNS** (same addresses as `krystalbbs.net`):
 
@@ -139,18 +142,55 @@ egnooz.krystalbbs.net.   A      <IPv4 of krystalbbs.net>
 egnooz.krystalbbs.net.   AAAA   <IPv6 of krystalbbs.net, if any>
 ```
 
-Or `CNAME egnooz.krystalbbs.net. → krystalbbs.net.` To use another name, change `server_name` in `deploy/nginx/egnooz.krystalbbs.net.conf` and `REVIEW_BASE_URL` together.
+Or `CNAME egnooz.krystalbbs.net. → krystalbbs.net.` To use another name, change the hostname in `deploy/caddy/egnooz.krystalbbs.net.caddy` and `REVIEW_BASE_URL` together.
 
-**Enable + TLS** (as root; leaves the existing vhost alone):
+Snippet (already in the repo):
 
-```bash
-sudo cp /home/egnooz/EGNooz/deploy/nginx/egnooz.krystalbbs.net.conf /etc/nginx/sites-available/
-sudo ln -sf /etc/nginx/sites-available/egnooz.krystalbbs.net.conf /etc/nginx/sites-enabled/
-sudo nginx -t && sudo systemctl reload nginx
-sudo certbot --nginx -d egnooz.krystalbbs.net
+```
+egnooz.krystalbbs.net {
+    reverse_proxy 127.0.0.1:8080
+}
 ```
 
-The snippet is HTTP-only so `nginx -t` works before certificates exist. `certbot --nginx` adds listen 443 and the Let’s Encrypt files. After TLS, keep `SESSION_COOKIE_SECURE=true` and `REVIEW_BASE_URL=https://egnooz.krystalbbs.net`.
+**Import without touching the apex site** (as root):
+
+1. Find the Caddyfile the running process uses (pid was 981). Do not guess a Debian nginx path.
+
+```bash
+tr '\0' '\n' < /proc/$(pidof caddy)/cmdline
+# and/or:
+systemctl cat caddy
+# Common: --config /etc/caddy/Caddyfile
+```
+
+2. Copy the snippet next to that config (so Caddy, often root, can read it even if the git tree is mode 700):
+
+```bash
+sudo cp /home/egnooz/EGNooz/deploy/caddy/egnooz.krystalbbs.net.caddy /etc/caddy/egnooz.krystalbbs.net.caddy
+```
+
+If Caddy’s config dir is not `/etc/caddy`, copy into the same directory as the existing Caddyfile.
+
+3. Open the existing Caddyfile and add **one new line at the top level** — not inside the `krystalbbs.net { ... }` block:
+
+```
+import /etc/caddy/egnooz.krystalbbs.net.caddy
+```
+
+If that Caddyfile already has `import /etc/caddy/conf.d/*`, put the snippet in `conf.d/` instead and skip a new import line.
+
+Alternatively, paste the `egnooz.krystalbbs.net { ... }` block as a **separate** site after the apex block. Do not edit the existing `krystalbbs.net` site.
+
+4. Validate and reload (config path from step 1):
+
+```bash
+sudo caddy validate --config /etc/caddy/Caddyfile
+sudo caddy reload --config /etc/caddy/Caddyfile
+```
+
+`systemctl reload caddy` is fine if that unit exists. Caddy will request a Let’s Encrypt cert for `egnooz.krystalbbs.net` once DNS points here. No certbot. After HTTPS works, keep `SESSION_COOKIE_SECURE=true` and `REVIEW_BASE_URL=https://egnooz.krystalbbs.net`.
+
+nginx is optional and **not** installed on this box. `deploy/nginx/` is only an example if you ever switch stacks — it does not use `/etc/nginx/sites-available`.
 
 Enable the user services (as `egnooz`; linger should already be on from the `tom` step):
 
