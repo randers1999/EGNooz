@@ -3,6 +3,8 @@
 # Uses an existing git checkout — including /home/egnooz/EGNooz (GitHub's
 # default clone name) and $PWD when this is already the repo. Does not
 # require a second clone to /home/egnooz/egnooz.
+# Always recopies deploy/systemd-user/*.service and *.timer into
+# ~/.config/systemd/user/ (overwrites stale OnCalendar etc.).
 # Tom may log in as tom to create the user. This script does not SSH and
 # does not print secrets. HTTPS and github.com:22 stay refused.
 set -euo pipefail
@@ -11,7 +13,7 @@ HOST_USER="egnooz"
 DATA="${EGNOOZ_DATA_DIR:-/home/${HOST_USER}/egnooz-data}"
 ENV_DIR="/home/${HOST_USER}/.config/egnooz"
 ENV_FILE="${ENV_DIR}/egnooz.env"
-UNIT_DIR="/home/${HOST_USER}/.config/systemd/user"
+UNIT_DIR="${HOME:-/home/${HOST_USER}}/.config/systemd/user"
 REPO_SSH="git@github.com:randers1999/EGNooz.git"
 
 if [[ "$(id -un)" != "${HOST_USER}" ]]; then
@@ -90,6 +92,35 @@ rewrite_repo_paths() {
 mkdir -p "${DATA}/drafts" "${DATA}/published" "${DATA}/state" "${ENV_DIR}" "${UNIT_DIR}"
 chmod 700 "${DATA}" "${ENV_DIR}"
 
+# Recopy user units on every run, before pip, so a later install step cannot
+# leave ~/.config/systemd/user/ with a stale OnCalendar.
+recopy_user_units() {
+  local src dest tmp copied=0
+  shopt -s nullglob
+  for src in "${ROOT}/deploy/systemd-user/"*.service "${ROOT}/deploy/systemd-user/"*.timer; do
+    dest="${UNIT_DIR}/$(basename "${src}")"
+    tmp="${dest}.install.$$"
+    rewrite_repo_paths < "${src}" > "${tmp}"
+    mv -f "${tmp}" "${dest}"
+    echo "Recopied ${dest}"
+    copied=$((copied + 1))
+  done
+  shopt -u nullglob
+  if [[ "${copied}" -eq 0 ]]; then
+    echo "No deploy/systemd-user/*.service or *.timer to copy." >&2
+    exit 1
+  fi
+  echo "Recopied ${copied} user units into ${UNIT_DIR} (overwrite every run)."
+  if command -v systemctl >/dev/null 2>&1; then
+    if systemctl --user daemon-reload; then
+      echo "Ran systemctl --user daemon-reload"
+    else
+      echo "systemctl --user daemon-reload failed; run it as ${HOST_USER} after linger is on." >&2
+    fi
+  fi
+}
+recopy_user_units
+
 if [[ ! -d "${ROOT}/.venv" ]]; then
   python3 -m venv "${ROOT}/.venv"
 fi
@@ -111,18 +142,13 @@ else
 fi
 chmod 600 "${ENV_FILE}"
 
-for src in "${ROOT}/deploy/systemd-user/"*; do
-  dest="${UNIT_DIR}/$(basename "${src}")"
-  rewrite_repo_paths < "${src}" > "${dest}"
-done
-
 rewrite_repo_paths < "${ROOT}/deploy/cron/egnooz.crontab" > "${ENV_DIR}/egnooz.crontab"
 
 echo
 echo "Next on krystalbbs.net (as user egnooz):"
 echo "  1. Edit ${ENV_FILE} (chmod 600). Generate SECRET_KEY; set REVIEW_PASSWORD and TOM_EMAIL."
 echo "  2. If linger is not on yet, as tom: sudo loginctl enable-linger ${HOST_USER}"
-echo "  3. systemctl --user daemon-reload"
+echo "  3. systemctl --user daemon-reload   # already attempted above after recopied units"
 echo "  4. systemctl --user enable --now egnooz-review.service egnooz-ingest.timer egnooz-reminder.timer"
 echo "  5. Point nginx on https://krystalbbs.net at 127.0.0.1:8080 (see deploy/nginx/krystalbbs.net.conf)"
 echo "  6. ${ROOT}/.venv/bin/egnooz doctor"

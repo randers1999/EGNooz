@@ -125,6 +125,8 @@ Edit `/home/egnooz/.config/egnooz/egnooz.env` (`chmod 600`):
 
 If `krystalbbs.net` already serves another site, do not replace that vhost. Use a subdomain or a path, and change `REVIEW_BASE_URL` to match. Example nginx snippet: `deploy/nginx/krystalbbs.net.conf`.
 
+`deploy/install.sh` **always overwrites** `~/.config/systemd/user/*.service` and `*.timer` from `deploy/systemd-user/` (git pull alone does not). After every pull, run `bash deploy/install.sh` as `egnooz`.
+
 Enable the user services (as `egnooz`; linger should already be on from the `tom` step):
 
 ```bash
@@ -133,6 +135,7 @@ systemctl --user enable --now egnooz-review.service
 systemctl --user enable --now egnooz-ingest.timer
 systemctl --user enable --now egnooz-reminder.timer
 systemctl --user status egnooz-review.service
+systemctl --user list-timers --all
 ```
 
 Or install the copies in `deploy/systemd/` into `/etc/systemd/system/` (needs sudo once). They run as `User=egnooz`.
