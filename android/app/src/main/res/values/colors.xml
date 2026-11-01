@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ink">#14232E</color>
+    <color name="paper">#F4EFE4</color>
+    <color name="teal">#1F5C57</color>
+    <color name="teal_dark">#143C39</color>
+    <color name="card">#FFFDF8</color>
+    <color name="launcher_fg">#FFFDF8</color>
+</resources>

@@ -12,8 +12,23 @@ build/
 .env
 .env.*
 !.env.example
-data/
-egnooz-data/
+/data/
+/egnooz-data/
 .python-version
 *.log
 .DS_Store
+
+# Android
+android/.gradle/
+android/.kotlin/
+android/**/build/
+android/local.properties
+android/.idea/
+android/*.iml
+android/captures/
+android/.cxx/
+android/**/*.apk
+android/**/*.aab
+android/**/*.ap_
+android/**/*.dex
+android/app/release/
