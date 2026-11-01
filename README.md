@@ -2,7 +2,7 @@
 
 Daily East Gippsland news edition: outbound links with a preview card (title, source, time, short snippet). Tom checks a draft on his phone, then taps **Publish**. Nothing public and no subscriber email goes out without that tap.
 
-This repository is the ingest + review/publish prototype. The Android app comes later and will read `latest.json`. Do not treat ABC’s retired RSS feeds or Google News as inputs.
+This repository is the ingest + review/publish prototype plus the Android edition client. The app reads `latest.json`. Do not treat ABC’s retired RSS feeds or Google News as inputs.
 
 - **VPS:** `krystalbbs.net` (apex already serves another site — leave that vhost alone)
 - **App host:** `egnooz.krystalbbs.net` (subdomain on the same box; Caddy reverse_proxy; rename in the Caddy snippet + `REVIEW_BASE_URL`)
@@ -37,6 +37,7 @@ deploy/cron/          # crontab fallback
 deploy/caddy/         # extra Caddy site (egnooz.krystalbbs.net → 127.0.0.1:8080)
 deploy/nginx/         # optional nginx example only — this VPS uses Caddy, not nginx
 docs/edition-schema.md
+android/              # Kotlin Compose client of latest.json
 ```
 
 Data on the VPS (not in git):
@@ -263,5 +264,17 @@ python3 -m venv .venv
 .venv/bin/pip install -e ".[dev]"
 .venv/bin/pytest
 ```
+
+## Android prototype
+
+Kotlin + Jetpack Compose. Opens `https://egnooz.krystalbbs.net/editions/latest.json`, shows headline cards (title, source, time, snippet), and opens the publisher in a Custom Tab. Pull to refresh. Last successful edition is cached offline. If nothing is published: **Not published yet**. No ads, accounts, tracking, or push.
+
+```bash
+cd android
+./gradlew assembleDebug
+# APK: app/build/outputs/apk/debug/app-debug.apk
+```
+
+Sideload notes: `android/README.md`.
 
 Australian English in user-facing copy. No ads.

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">EGNooz</string>
+    <string name="kicker">EAST GIPPSLAND DAILY EDITION</string>
+    <string name="not_published_yet">Not published yet</string>
+    <string name="not_published_body">Today’s edition goes out after Tom checks the draft. Pull down to try again. Yesterday stays until then, if we already have it saved on this phone.</string>
+    <string name="not_published_showing_last">Today’s edition is not published yet. Showing the last published edition.</string>
+    <string name="offline_showing_last">Could not reach EGNooz. Showing the last saved edition.</string>
+    <string name="offline">Could not reach EGNooz. Check your connection, then pull down to try again.</string>
+    <string name="fetch_failed">Could not load today’s edition. Pull down to try again.</string>
+    <string name="thin_day">A thin day — no headlines in this edition.</string>
+    <string name="fineprint">No ads. Each headline opens the publisher’s own page. EGNooz is not an emergency service.</string>
+    <string name="warnings_heading">Warnings</string>
+    <string name="fire_danger">Fire danger: %1$s</string>
+    <string name="fire_danger_ban">Fire danger: %1$s. %2$s</string>
+</resources>
