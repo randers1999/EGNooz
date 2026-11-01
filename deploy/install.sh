@@ -5,6 +5,8 @@
 # require a second clone to /home/egnooz/egnooz.
 # Always recopies deploy/systemd-user/*.service and *.timer into
 # ~/.config/systemd/user/ (overwrites stale OnCalendar etc.).
+# Never overwrites an existing env file (only creates ~/.config/egnooz/egnooz.env
+# from .env.example when missing). Warns if the clone has a repo-root .env.
 # Tom may log in as tom to create the user. This script does not SSH and
 # does not print secrets. HTTPS and github.com:22 stay refused.
 set -euo pipefail
@@ -121,26 +123,25 @@ recopy_user_units() {
 }
 recopy_user_units
 
+if [[ -e "${ROOT}/.env" ]]; then
+  echo "WARNING: ${ROOT}/.env exists. install.sh will not touch it." >&2
+  echo "systemd and this script use ${ENV_FILE}. Prefer that file; do not keep secrets in the clone." >&2
+fi
+
+if [[ -e "${ENV_FILE}" ]]; then
+  echo "Keeping existing ${ENV_FILE} (install.sh never overwrites env files)."
+else
+  rewrite_repo_paths < "${ROOT}/.env.example" > "${ENV_FILE}"
+  chmod 600 "${ENV_FILE}"
+  echo "Wrote ${ENV_FILE} from .env.example. Fill SECRET_KEY, REVIEW_PASSWORD, TOM_EMAIL, Resend keys."
+  echo "Set REVIEW_BASE_URL=https://egnooz.krystalbbs.net (or your renamed subdomain). Never commit that file."
+fi
+
 if [[ ! -d "${ROOT}/.venv" ]]; then
   python3 -m venv "${ROOT}/.venv"
 fi
 "${ROOT}/.venv/bin/pip" install --upgrade pip
 "${ROOT}/.venv/bin/pip" install -e "${ROOT}"
-
-if [[ ! -f "${ENV_FILE}" ]]; then
-  rewrite_repo_paths < "${ROOT}/.env.example" > "${ENV_FILE}"
-  chmod 600 "${ENV_FILE}"
-  echo "Wrote ${ENV_FILE} from .env.example. Fill SECRET_KEY, REVIEW_PASSWORD, TOM_EMAIL, Resend keys. Never commit that file."
-else
-  chmod 600 "${ENV_FILE}"
-  echo "Keeping existing ${ENV_FILE}"
-fi
-if grep -q '^EGNOOZ_ROOT=' "${ENV_FILE}"; then
-  sed -i "s|^EGNOOZ_ROOT=.*|EGNOOZ_ROOT=${ROOT}|" "${ENV_FILE}"
-else
-  printf '\nEGNOOZ_ROOT=%s\n' "${ROOT}" >> "${ENV_FILE}"
-fi
-chmod 600 "${ENV_FILE}"
 
 rewrite_repo_paths < "${ROOT}/deploy/cron/egnooz.crontab" > "${ENV_DIR}/egnooz.crontab"
 
@@ -150,7 +151,13 @@ echo "  1. Edit ${ENV_FILE} (chmod 600). Generate SECRET_KEY; set REVIEW_PASSWOR
 echo "  2. If linger is not on yet, as tom: sudo loginctl enable-linger ${HOST_USER}"
 echo "  3. systemctl --user daemon-reload   # already attempted above after recopied units"
 echo "  4. systemctl --user enable --now egnooz-review.service egnooz-ingest.timer egnooz-reminder.timer"
-echo "  5. Point nginx on https://krystalbbs.net at 127.0.0.1:8080 (see deploy/nginx/krystalbbs.net.conf)"
+echo "  5. Subdomain DNS + nginx (do not replace the existing krystalbbs.net vhost):"
+echo "     DNS A/AAAA egnooz.krystalbbs.net to the same IPs as krystalbbs.net (or CNAME)."
+echo "     sudo cp ${ROOT}/deploy/nginx/egnooz.krystalbbs.net.conf /etc/nginx/sites-available/"
+echo "     sudo ln -sf /etc/nginx/sites-available/egnooz.krystalbbs.net.conf /etc/nginx/sites-enabled/"
+echo "     sudo nginx -t && sudo systemctl reload nginx"
+echo "     sudo certbot --nginx -d egnooz.krystalbbs.net"
+echo "     REVIEW_BASE_URL in ${ENV_FILE} must match that host (install.sh will not overwrite the env file)."
 echo "  6. ${ROOT}/.venv/bin/egnooz doctor"
 echo "  7. ${ROOT}/.venv/bin/egnooz ingest --no-email"
 echo

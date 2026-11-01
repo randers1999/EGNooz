@@ -6,8 +6,8 @@ Android, the public page, and email all render the **published** file. Drafts st
 
 ## Public files (only after Publish)
 
-- `https://krystalbbs.net/editions/latest.json` — last published edition (yesterday stays until today is published)
-- `https://krystalbbs.net/editions/YYYY-MM-DD.json` — that day’s published edition
+- `https://egnooz.krystalbbs.net/editions/latest.json` — last published edition (yesterday stays until today is published)
+- `https://egnooz.krystalbbs.net/editions/YYYY-MM-DD.json` — that day’s published edition
 
 Unpublished days return HTTP 404. Ingest never writes these files.
 

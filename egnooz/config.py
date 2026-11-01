@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 from egnooz import TIMEZONE_NAME
 
-DEFAULT_HOST = "krystalbbs.net"
+DEFAULT_HOST = "egnooz.krystalbbs.net"
 DEFAULT_BASE_URL = f"https://{DEFAULT_HOST}"
 DEFAULT_ENV_PATH = Path.home() / ".config" / "egnooz" / "egnooz.env"
 

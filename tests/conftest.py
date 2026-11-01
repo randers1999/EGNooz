@@ -18,7 +18,7 @@ def settings(tmp_path: Path) -> Settings:
         secret_key="test-secret-key-not-for-production",
         review_password="test-pass",
         session_cookie_secure=False,
-        review_base_url="https://krystalbbs.net",
+        review_base_url="https://egnooz.krystalbbs.net",
         tom_email="tom@example.test",
         send_draft_ready_email=False,
     )

@@ -4,10 +4,11 @@ Daily East Gippsland news edition: outbound links with a preview card (title, so
 
 This repository is the ingest + review/publish prototype. The Android app comes later and will read `latest.json`. Do not treat ABC’s retired RSS feeds or Google News as inputs.
 
-- **VPS:** `krystalbbs.net`
+- **VPS:** `krystalbbs.net` (apex already serves another site — leave that vhost alone)
+- **App host:** `egnooz.krystalbbs.net` (subdomain on the same box; rename in nginx + `REVIEW_BASE_URL`)
 - **App user:** `egnooz` (home `/home/egnooz`). Tom may log in as `tom` to create that user.
 - **Timezone:** `Australia/Melbourne`
-- **Public JSON (after Publish):** `https://krystalbbs.net/editions/latest.json`
+- **Public JSON (after Publish):** `https://egnooz.krystalbbs.net/editions/latest.json`
 
 No SSH from this repo’s CI. GitHub Actions is not the ingest runtime.
 
@@ -16,7 +17,7 @@ No SSH from this repo’s CI. GitHub Actions is not the ingest runtime.
 | Time | What happens |
 | --- | --- |
 | 5:00 am | `egnooz ingest` pulls allowlisted feeds, writes a **draft** JSON, optionally emails Tom “draft ready”. |
-| When you have five minutes | Open `https://krystalbbs.net/`, uncheck junk, add a URL if needed, optional editor note, tap **Publish**. |
+| When you have five minutes | Open `https://egnooz.krystalbbs.net/`, uncheck junk, add a URL if needed, optional editor note, tap **Publish**. |
 | Publish | Writes `published/YYYY-MM-DD.json` and `published/latest.json`, then emails the prototype list (Tom only unless you add testers). |
 | 10:00 am | `egnooz remind` emails Tom **only if today is still unpublished**. It never publishes. |
 | If you skip Publish | Hold. Yesterday’s `latest.json` stays. No subscriber email. |
@@ -33,7 +34,7 @@ deploy/systemd/       # system units (User=egnooz)
 deploy/systemd-user/  # lingering user units (preferred)
 deploy/clone.sh       # SSH deploy-key clone (no HTTPS, no password prompt)
 deploy/cron/          # crontab fallback
-deploy/nginx/         # reverse proxy example for krystalbbs.net
+deploy/nginx/         # subdomain vhost (egnooz.krystalbbs.net); do not replace the apex site
 docs/edition-schema.md
 ```
 
@@ -119,13 +120,37 @@ Edit `/home/egnooz/.config/egnooz/egnooz.env` (`chmod 600`):
 2. `REVIEW_PASSWORD` — phone sign-in for the review page
 3. `TOM_EMAIL` — draft-ready, 10:00 am reminder, and the prototype edition email
 4. `RESEND_API_KEY` and `RESEND_FROM` — leave empty to run without mail
-5. `REVIEW_BASE_URL=https://krystalbbs.net`
-6. `SESSION_COOKIE_SECURE=true` once nginx is serving HTTPS
+5. `REVIEW_BASE_URL=https://egnooz.krystalbbs.net` (must match the nginx `server_name` if you rename the subdomain)
+6. `SESSION_COOKIE_SECURE=true` once certbot is serving HTTPS
 7. `EGNOOZ_BIND=127.0.0.1` and `EGNOOZ_PORT=8080` (nginx talks to localhost)
 
-If `krystalbbs.net` already serves another site, do not replace that vhost. Use a subdomain or a path, and change `REVIEW_BASE_URL` to match. Example nginx snippet: `deploy/nginx/krystalbbs.net.conf`.
+`deploy/install.sh` **never overwrites** `~/.config/egnooz/egnooz.env` (creates it from `.env.example` only if missing). It prints a warning if the clone has a repo-root `.env` and will not touch that file either.
 
 `deploy/install.sh` **always overwrites** `~/.config/systemd/user/*.service` and `*.timer` from `deploy/systemd-user/` (git pull alone does not). After every pull, run `bash deploy/install.sh` as `egnooz`.
+
+### Subdomain nginx (do not replace krystalbbs.net)
+
+The apex `krystalbbs.net` vhost stays. EGNooz is an extra site on the same box.
+
+**DNS** (same addresses as `krystalbbs.net`):
+
+```
+egnooz.krystalbbs.net.   A      <IPv4 of krystalbbs.net>
+egnooz.krystalbbs.net.   AAAA   <IPv6 of krystalbbs.net, if any>
+```
+
+Or `CNAME egnooz.krystalbbs.net. → krystalbbs.net.` To use another name, change `server_name` in `deploy/nginx/egnooz.krystalbbs.net.conf` and `REVIEW_BASE_URL` together.
+
+**Enable + TLS** (as root; leaves the existing vhost alone):
+
+```bash
+sudo cp /home/egnooz/EGNooz/deploy/nginx/egnooz.krystalbbs.net.conf /etc/nginx/sites-available/
+sudo ln -sf /etc/nginx/sites-available/egnooz.krystalbbs.net.conf /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot --nginx -d egnooz.krystalbbs.net
+```
+
+The snippet is HTTP-only so `nginx -t` works before certificates exist. `certbot --nginx` adds listen 443 and the Let’s Encrypt files. After TLS, keep `SESSION_COOKIE_SECURE=true` and `REVIEW_BASE_URL=https://egnooz.krystalbbs.net`.
 
 Enable the user services (as `egnooz`; linger should already be on from the `tom` step):
 
@@ -157,7 +182,7 @@ Check:
 .venv/bin/egnooz ingest --no-email
 ```
 
-Open `https://krystalbbs.net/login`, review, Publish. Until you publish, `https://krystalbbs.net/editions/latest.json` is 404 (or still yesterday).
+Open `https://egnooz.krystalbbs.net/login`, review, Publish. Until you publish, `https://egnooz.krystalbbs.net/editions/latest.json` is 404 (or still yesterday).
 
 ## Commands
 
