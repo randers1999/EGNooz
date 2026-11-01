@@ -1,0 +1,63 @@
+{
+  "type": "FeatureCollection",
+  "properties": {
+    "lastUpdated": "2026-10-31T04:50:40.276Z",
+    "conditions": {
+      "fdr": {"East Gippsland": "MODERATE", "West and South Gippsland": "HIGH"},
+      "tfb": {"East Gippsland": "NO - RESTRICTIONS MAY APPLY"}
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "feedType": "warning",
+        "id": "eg-1",
+        "sourceTitle": "Advice",
+        "category1": "Advice",
+        "category2": "Health",
+        "status": "Minor",
+        "location": "East Gippsland",
+        "statewide": "N",
+        "updated": "2026-10-31T14:03:11+11:00",
+        "url": "https://www.emergency.vic.gov.au/respond/"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feedType": "incident",
+        "id": "morwell-1",
+        "sourceTitle": "Building Fire",
+        "category1": "Fire",
+        "location": "Kurt St, Morwell",
+        "status": "Going",
+        "updated": "2026-10-31T12:00:00+11:00"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feedType": "incident",
+        "id": "sale-1",
+        "sourceTitle": "Flooding",
+        "category1": "Flood",
+        "location": "Sale",
+        "status": "Warning",
+        "updated": "2026-10-31T11:00:00+11:00"
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "feedType": "warning",
+        "id": "wsg-1",
+        "sourceTitle": "Advice",
+        "category1": "Advice",
+        "location": "West and South Gippsland",
+        "statewide": "N",
+        "updated": "2026-10-31T10:00:00+11:00"
+      }
+    }
+  ]
+}

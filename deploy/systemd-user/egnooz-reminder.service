@@ -1,0 +1,12 @@
+[Unit]
+Description=EGNooz 10:00am Melbourne unpublished reminder (never publishes)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/egnooz/EGNooz
+EnvironmentFile=/home/egnooz/.config/egnooz/egnooz.env
+Environment=EGNOOZ_ROOT=/home/egnooz/EGNooz
+ExecStart=/home/egnooz/EGNooz/.venv/bin/egnooz remind
+Nice=10

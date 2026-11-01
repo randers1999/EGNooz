@@ -1,0 +1,16 @@
+[Unit]
+Description=EGNooz 5:00am Melbourne ingest (writes draft only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=egnooz
+Group=egnooz
+WorkingDirectory=/home/egnooz/EGNooz
+EnvironmentFile=/home/egnooz/.config/egnooz/egnooz.env
+Environment=EGNOOZ_ROOT=/home/egnooz/EGNooz
+ExecStart=/home/egnooz/EGNooz/.venv/bin/egnooz ingest
+Nice=10
+NoNewPrivileges=true
+PrivateTmp=true

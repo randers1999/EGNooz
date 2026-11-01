@@ -1,0 +1,110 @@
+# East Gippsland place filter (D8). Edit freely.
+# Include Sale and Maffra. Unqualified "Gippsland" is not an include.
+
+timezone: Australia/Melbourne
+
+include:
+  - East Gippsland
+  - East Gippsland Shire
+  - East Gippsland Shire Council
+  - East Gippsland Water
+  - Bairnsdale Regional Health Service
+  - BRHS
+  - East Gippsland Coast
+  - Gippsland Lakes
+  - Sale
+  - Maffra
+  - Bairnsdale
+  - Lakes Entrance
+  - Paynesville
+  - Metung
+  - Eagle Point
+  - Raymond Island
+  - Orbost
+  - Mallacoota
+  - Omeo
+  - Swifts Creek
+  - Buchan
+  - Cann River
+  - Bruthen
+  - Lindenow
+  - Lindenow South
+  - Wy Yung
+  - Marlo
+  - Nowa Nowa
+  - Lake Tyers
+  - Lake Tyers Beach
+  - Johnsonville
+  - Swan Reach
+  - Nicholson
+  - Ensay
+  - Benambra
+  - Goongerah
+  - Genoa
+  - Gipsy Point
+  - Gypsy Point
+  - Croajingolong
+  - Errinundra
+  - Mitchell River
+  - Tambo River
+  - Snowy River
+  - Dargo
+  - Glenaladale
+  - Sarsfield
+  - Kalimna
+  - Kalimna West
+  - Lucknow
+  - Newmerella
+  - Bemm River
+  - Cape Conran
+  - Club Terrace
+  - Bendoc
+  - Bonang
+  - Newlands Arm
+  - Lake Bunga
+  - Nungurner
+  - Tambo Upper
+  - Mossiface
+  - Wuk Wuk
+  - Mount Taylor
+  - Forge Creek
+  - Bumberrah
+  - Cunninghame
+  - Toorloo Arm
+  - Wonnangatta
+  - Anglers Rest
+  - Cassilis
+  - Fernbank
+  - Meerlieu
+
+exclude:
+  # Unqualified region and neighbours. A hit here does not veto an include match.
+  - Latrobe Valley
+  - Traralgon
+  - Morwell
+  - Moe
+  - Churchill
+  - Yallourn
+  - Trafalgar
+  - Warragul
+  - Drouin
+  - Phillip Island
+  - Cowes
+  - South Gippsland
+  - West Gippsland
+  - West and South Gippsland
+  - Wilsons Promontory
+  - Wilsons Prom
+  - Leongatha
+  - Wonthaggi
+  - Inverloch
+  - Foster
+  - Korumburra
+  - Mirboo North
+  - Yarram
+  - Rosedale
+  - Heyfield
+  - Stratford
+  - Port Albert
+  - Koo Wee Rup
+  - Pakenham

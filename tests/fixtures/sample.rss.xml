@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Fixture Advertiser</title>
+    <item>
+      <title>Bairnsdale market returns</title>
+      <link>https://example.test/local/bairnsdale-market</link>
+      <description>&lt;p&gt;The weekly market is back in Bairnsdale this Saturday.&lt;/p&gt;</description>
+      <pubDate>Fri, 30 Oct 2026 21:00:00 +1100</pubDate>
+    </item>
+    <item>
+      <title>Morwell factory expansion</title>
+      <link>https://example.test/latrobe/morwell-factory</link>
+      <description>Jobs in the Latrobe Valley and Traralgon, not the shire.</description>
+      <pubDate>Fri, 30 Oct 2026 20:00:00 +1100</pubDate>
+    </item>
+    <item>
+      <title>Statewide sport wrap</title>
+      <link>https://example.test/sport/wrap</link>
+      <description>No place names here at all.</description>
+      <pubDate>Fri, 30 Oct 2026 19:00:00 +1100</pubDate>
+    </item>
+  </channel>
+</rss>

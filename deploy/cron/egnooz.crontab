@@ -1,0 +1,13 @@
+# Crontab for user egnooz on krystalbbs.net (home /home/egnooz).
+# Use this if you would rather not enable systemd timers.
+# Install as egnooz: crontab deploy/cron/egnooz.crontab
+# (or: crontab -u egnooz deploy/cron/egnooz.crontab)
+#
+# Ingest still never publishes. The 10:00 job only emails Tom.
+
+CRON_TZ=Australia/Melbourne
+SHELL=/bin/bash
+PATH=/home/egnooz/EGNooz/.venv/bin:/usr/bin:/bin
+
+0 5 * * * cd /home/egnooz/EGNooz && /home/egnooz/EGNooz/.venv/bin/egnooz ingest >> /home/egnooz/egnooz-data/ingest.log 2>&1
+0 10 * * * cd /home/egnooz/EGNooz && /home/egnooz/EGNooz/.venv/bin/egnooz remind >> /home/egnooz/egnooz-data/reminder.log 2>&1

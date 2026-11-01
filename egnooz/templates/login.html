@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}EGNooz review — sign in{% endblock %}
+{% block body_class %}login-page{% endblock %}
+{% block body %}
+<main class="shell login-shell">
+  <p class="kicker">East Gippsland daily edition</p>
+  <h1>EGNooz review</h1>
+  <p class="lede">Sign in to check today’s draft. Nothing goes public, and nobody is emailed, until you tap Publish.</p>
+  {% if error %}
+  <p class="banner banner-warn" role="alert">{{ error }}</p>
+  {% endif %}
+  <form method="post" action="{{ url_for('login', next=request.args.get('next')) }}" class="stack">
+    <label for="password">Review password</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" required>
+    <button type="submit" class="btn primary">Sign in</button>
+  </form>
+  <p class="fineprint">Hosted on krystalbbs.net. Timezone Australia/Melbourne.</p>
+</main>
+{% endblock %}

@@ -1,0 +1,12 @@
+# Extra Caddy site for EGNooz. Do not put this inside the existing
+# krystalbbs.net site block — add it as its own site (or import this file).
+#
+# Default host: egnooz.krystalbbs.net
+# To rename: change the hostname below and REVIEW_BASE_URL together.
+# Caddy issues the TLS cert itself (no nginx, no certbot).
+#
+# App: systemd user egnooz-review.service on 127.0.0.1:8080.
+
+egnooz.krystalbbs.net {
+    reverse_proxy 127.0.0.1:8080
+}

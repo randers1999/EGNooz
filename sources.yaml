@@ -1,0 +1,177 @@
+# EGNooz source list. Tom edits this; ingest reads it.
+# Draft list from the product plan (31 October 2026), with feed status from a
+# live probe the same day. A publisher request to be removed is honoured the same day.
+#
+# ingest:
+#   rss    — official RSS/Atom
+#   json   — official JSON (VicEmergency)
+#   manual — no automatic fetch; paste URLs on the review page
+#   none   — listed for the record; skipped until a feed exists (do not HTML-scrape)
+#
+# match: local (items default ON in review) | mention (items default OFF)
+
+timezone: Australia/Melbourne
+user_agent: "EGNooz/0.1 (+https://github.com/randers1999/EGNooz; East Gippsland daily briefing)"
+
+sources:
+  # --- A. Local publishers (core) ---
+  - id: bairnsdale-advertiser
+    name: Bairnsdale Advertiser
+    home: https://bairnsdaleadvertiser.com.au/
+    match: local
+    ingest: rss
+    enabled: true
+    feed_url: https://bairnsdaleadvertiser.com.au/feed/
+    lookback_hours: 192
+    notes: >
+      East Vic Media. Weekly, typically Wednesday. WordPress /feed/ returned RSS
+      from this environment on 31 Oct 2026. An earlier datacentre probe was
+      firewalled — if the VPS is blocked, do not scrape HTML; ask the publisher.
+
+  - id: lakes-post
+    name: Lakes Post
+    home: https://lakespost.com.au/
+    match: local
+    ingest: rss
+    enabled: true
+    feed_url: https://lakespost.com.au/feed/
+    lookback_hours: 192
+    notes: Same family as the Advertiser. Weekly, typically Wednesday.
+
+  - id: snowy-river-mail
+    name: Snowy River Mail
+    home: https://snowyrivermail.com.au/
+    match: local
+    ingest: rss
+    enabled: true
+    feed_url: https://snowyrivermail.com.au/feed/
+    lookback_hours: 192
+    notes: Orbost. Weekly, typically Wednesday.
+
+  # --- B. Public broadcaster ---
+  - id: abc-gippsland
+    name: ABC Gippsland
+    home: https://www.abc.net.au/gippsland/news
+    match: local
+    ingest: manual
+    enabled: true
+    notes: >
+      ABC retired public RSS (announced 8 June 2024). Do not use old feed id
+      9396334. Add ABC links by hand during review until syndication or a
+      separate ToS decision. Do not scrape the index.
+
+  # --- C. Local government and agencies (core) ---
+  - id: egsc-media
+    name: East Gippsland Shire Council
+    home: https://www.eastgippsland.vic.gov.au/our-council/media-releases
+    match: local
+    ingest: none
+    enabled: true
+    notes: >
+      Media releases page is live; no RSS found (Webflow site). No HTML listing
+      scrape until Tom says yes for this source. Paste URLs during review.
+
+  - id: eg-water
+    name: East Gippsland Water
+    home: https://www.egwater.vic.gov.au/community/media-releases/
+    match: local
+    ingest: none
+    enabled: true
+    notes: >
+      Media releases page is live. /feed/ and Joomla format=feed both 404.
+      No HTML scrape. Paste URLs during review.
+
+  - id: brhs
+    name: Bairnsdale Regional Health Service
+    home: https://brhs.com.au/news/
+    match: local
+    ingest: rss
+    enabled: true
+    feed_url: https://brhs.com.au/feed/
+    lookback_hours: 168
+    notes: WordPress site feed works. /news/feed/ is comments, not posts — do not use it.
+
+  - id: vicemergency
+    name: VicEmergency
+    home: https://www.emergency.vic.gov.au/respond/
+    match: local
+    ingest: json
+    enabled: true
+    feed_url: https://emergency.vic.gov.au/public/events-geojson.json
+    notes: >
+      Official GeoJSON, CC BY 3.0 AU. Filter to East Gippsland plus Sale/Maffra.
+      Rendered as the warnings strip, not mixed into the news list.
+
+  # --- D. Community / nice-to-have (off until verified) ---
+  - id: reg-fm
+    name: Radio East Gippsland
+    home: https://www.regfm.com.au/
+    match: local
+    ingest: none
+    enabled: false
+    notes: No /feed/ (404). Leave off until a news feed exists.
+
+  - id: 3mgb
+    name: 3MGB Wilderness Radio
+    home: https://www.3mgb.org.au/
+    match: local
+    ingest: rss
+    enabled: false
+    feed_url: https://www.3mgb.org.au/feed/
+    lookback_hours: 168
+    notes: WordPress feed exists; left off until Tom wants community-radio items.
+
+  - id: orh
+    name: Orbost Regional Health
+    home: https://www.orbostregionalhealth.com.au/
+    match: local
+    ingest: none
+    enabled: false
+    notes: No /feed/. Occasional; paste URLs if needed.
+
+  - id: destination-gippsland
+    name: Destination Gippsland
+    home: https://www.visitgippsland.com.au/destination-gippsland
+    match: mention
+    ingest: none
+    enabled: false
+    notes: Tourism site; easy to become brochure-ware. Keep off unless Tom wants visitor stories.
+
+  # --- E. Mention sources (statewide/national — review default OFF) ---
+  - id: guardian-au
+    name: Guardian Australia
+    home: https://www.theguardian.com/australia-news
+    match: mention
+    ingest: rss
+    enabled: true
+    feed_url: https://www.theguardian.com/australia-news/rss
+    lookback_hours: 36
+    notes: Public RSS. Place-filter hard. Items default off in review.
+
+  - id: vic-gov-media
+    name: Victorian government media
+    home: https://www.premier.vic.gov.au/media-centre
+    match: mention
+    ingest: none
+    enabled: true
+    notes: >
+      No official Premier RSS (rss.xml is 404). Do not use unofficial scraped
+      third-party feeds. Paste a release URL during review when it names the shire.
+
+  - id: the-age
+    name: The Age
+    home: https://www.theage.com.au/
+    match: mention
+    ingest: rss
+    enabled: false
+    feed_url: https://www.theage.com.au/rss/national/victoria.xml
+    lookback_hours: 36
+    notes: Victoria RSS exists. Left off until Tom confirms ToS/use. Items would default off.
+
+  - id: newsapi-au
+    name: NewsAPI Australia
+    home: https://newsapi.org/
+    match: mention
+    ingest: none
+    enabled: false
+    notes: Optional paid mention discovery later. Not in the prototype. No Google News scrape.

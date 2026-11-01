@@ -1,0 +1,12 @@
+[Unit]
+Description=Run EGNooz ingest at 5:00am Australia/Melbourne
+
+[Timer]
+# Timezone must come last. "Australia/Melbourne *-*-* 05:00:00" is invalid
+# and systemd reports: Timer unit lacks value setting / bad unit file setting.
+OnCalendar=*-*-* 05:00:00 Australia/Melbourne
+Persistent=true
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

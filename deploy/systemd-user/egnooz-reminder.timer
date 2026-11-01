@@ -1,0 +1,12 @@
+[Unit]
+Description=Email Tom at 10:00am Melbourne if EGNooz is still unpublished
+
+[Timer]
+# Timezone must come last. "Australia/Melbourne *-*-* 10:00:00" is invalid
+# and systemd reports: Timer unit lacks value setting / bad unit file setting.
+OnCalendar=*-*-* 10:00:00 Australia/Melbourne
+Persistent=true
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target
